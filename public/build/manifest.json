@@ -1,0 +1,28 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-GtqSkKzw.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/Pages/Board.tsx": {
+    "file": "assets/Board-DAiPMvif.js",
+    "name": "Board",
+    "src": "resources/js/Pages/Board.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.tsx"
+    ]
+  },
+  "resources/js/app.tsx": {
+    "file": "assets/app-kqt2ozyw.js",
+    "name": "app",
+    "src": "resources/js/app.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/Pages/Board.tsx"
+    ],
+    "css": [
+      "assets/app-GtqSkKzw.css"
+    ]
+  }
+}
