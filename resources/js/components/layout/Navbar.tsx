@@ -11,6 +11,7 @@ import {
   LogOutIcon,
   LogInIcon,
 } from 'lucide-react';
+import { BugMark } from '../brand/BugMark';
 import type { Board, Priority, Workspace, User } from '../../types/kanban';
 
 type NavbarProps = {
@@ -65,19 +66,19 @@ export function Navbar({
         {/* Left: Brand & Workspace Switcher */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-md shadow-brand-500/20 text-white font-bold shrink-0">
-              <LayersIcon className="h-5 w-5" />
-            </div>
-            <div>
+            <a href="https://heiseenbug.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 border border-slate-800 group-hover:border-brand-500/50 shadow-md shadow-brand-500/10 text-brand-400 shrink-0 transition-colors">
+                <BugMark className="h-4 w-auto text-brand-400 group-hover:scale-105 transition-transform" />
+              </div>
               <div className="flex items-center gap-1.5">
-                <span className="font-display text-base font-bold tracking-tight text-white">
-                  গুছাও <span className="text-xs font-mono font-normal text-brand-400">Guchao</span>
+                <span className="font-display text-base font-bold tracking-tight text-white group-hover:text-brand-300 transition-colors">
+                  HeiSeenBug <span className="text-xs font-mono font-normal text-brand-400">Guchao</span>
                 </span>
                 <span className="hidden sm:inline-block rounded-full bg-brand-500/10 border border-brand-500/25 px-2 py-0.5 text-[10px] font-mono text-brand-300">
                   {board.prefix}
                 </span>
               </div>
-            </div>
+            </a>
           </div>
 
           {/* Workspace Switcher */}

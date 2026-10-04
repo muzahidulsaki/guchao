@@ -166,7 +166,7 @@ export default function BoardPage({
 
   return (
     <div className="flex h-screen flex-col bg-slate-950 font-sans text-slate-100 overflow-hidden select-none">
-      <Head title={`${board.title} — গুছাও (Guchao)`} />
+      <Head title={`${board.title} — HeiSeenBug Guchao`} />
 
       {/* Top Navbar */}
       <Navbar

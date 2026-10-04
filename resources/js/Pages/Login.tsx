@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { LayersIcon, ArrowRightIcon, UsersIcon, CheckCircle2Icon, ShieldCheckIcon } from 'lucide-react';
+import { ArrowRightIcon, UsersIcon, CheckCircle2Icon, ShieldCheckIcon } from 'lucide-react';
+import { BugMark } from '../components/brand/BugMark';
 
 type LoginProps = {
   googleEnabled: boolean;
@@ -19,7 +20,7 @@ export default function Login({ googleEnabled }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden select-none">
-      <Head title="Sign In — গুছাও (Guchao)" />
+      <Head title="Sign In — HeiSeenBug Guchao" />
 
       {/* Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -29,14 +30,14 @@ export default function Login({ googleEnabled }: LoginProps) {
       <div className="relative w-full max-w-md rounded-3xl border border-slate-800/80 bg-slate-900/90 p-8 shadow-2xl shadow-black/80 backdrop-blur-xl">
         {/* Logo and Brand */}
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-xl shadow-brand-500/25 mb-4">
-            <LayersIcon className="h-7 w-7" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 border border-slate-800 text-brand-400 shadow-xl shadow-brand-500/15 mb-4">
+            <BugMark className="h-7 w-auto text-brand-400" />
           </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-white">
-            গুছাও <span className="text-sm font-mono font-medium text-brand-400">Guchao</span>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-1.5">
+            HeiSeenBug <span className="text-sm font-mono font-medium text-brand-400">Guchao</span>
           </h1>
           <p className="mt-1 text-xs text-slate-400 max-w-xs">
-            Trello-style Workspace Task Management & Team Pipeline
+            Workspace Task Management & Team Pipeline by Heiseenbug
           </p>
         </div>
 
