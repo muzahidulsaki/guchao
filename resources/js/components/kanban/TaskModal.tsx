@@ -15,10 +15,11 @@ import {
   SendIcon,
   ClockIcon,
 } from 'lucide-react';
-import type { Task, Priority } from '../../types/kanban';
+import type { Task, Priority, User } from '../../types/kanban';
 
 type TaskModalProps = {
   task: Task | null;
+  members?: User[];
   isOpen: boolean;
   onClose: () => void;
 };
@@ -30,13 +31,14 @@ const PRIORITIES: { value: Priority; label: string; icon: React.ComponentType<{ 
   { value: 'low', label: 'Low', icon: ArrowDownIcon, color: 'text-slate-400 bg-slate-500/10 border-slate-500/30' },
 ];
 
-export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
+export function TaskModal({ task, members = [], isOpen, onClose }: TaskModalProps) {
   if (!isOpen || !task) return null;
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || '');
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [dueDate, setDueDate] = useState(task.due_date || '');
+  const [assigneeId, setAssigneeId] = useState<number | ''>(task.assignee_id || '');
   const [assigneeName, setAssigneeName] = useState(task.assignee_name || '');
   const [labels, setLabels] = useState<string[]>(task.labels || []);
   const [newLabelInput, setNewLabelInput] = useState('');
@@ -49,6 +51,7 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
     setDescription(task.description || '');
     setPriority(task.priority);
     setDueDate(task.due_date || '');
+    setAssigneeId(task.assignee_id || '');
     setAssigneeName(task.assignee_name || '');
     setLabels(task.labels || []);
   }, [task]);
@@ -72,6 +75,7 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
         description,
         priority,
         due_date: dueDate || null,
+        assignee_id: assigneeId ? Number(assigneeId) : null,
         assignee_name: assigneeName || null,
         labels,
       },
@@ -224,13 +228,28 @@ export function TaskModal({ task, isOpen, onClose }: TaskModalProps) {
                   <UserIcon className="h-3 w-3" />
                   Assignee
                 </label>
-                <input
-                  type="text"
-                  value={assigneeName}
-                  onChange={(e) => setAssigneeName(e.target.value)}
-                  placeholder="Assignee name..."
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
-                />
+                {members.length > 0 ? (
+                  <select
+                    value={assigneeId}
+                    onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : '')}
+                    className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                  >
+                    <option value="">Unassigned</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.email})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={assigneeName}
+                    onChange={(e) => setAssigneeName(e.target.value)}
+                    placeholder="Assignee name..."
+                    className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
+                  />
+                )}
               </div>
             </div>
 

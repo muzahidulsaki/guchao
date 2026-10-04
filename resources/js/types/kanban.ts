@@ -1,5 +1,12 @@
 export type Priority = 'urgent' | 'high' | 'medium' | 'low';
 
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string | null;
+};
+
 export type TaskActivity = {
   id: number;
   task_id: number;
@@ -13,6 +20,8 @@ export type Task = {
   id: number;
   board_id: number;
   column_id: number;
+  assignee_id?: number | null;
+  assignee?: User | null;
   task_key: string; // e.g. GUC-101
   title: string;
   description: string | null;
@@ -44,8 +53,20 @@ export type BoardSummary = {
   color: string;
 };
 
+export type Workspace = {
+  id: number;
+  name: string;
+  slug: string;
+  owner_id: number;
+  color: string;
+  description: string | null;
+  invite_code: string;
+  boards?: BoardSummary[];
+};
+
 export type Board = {
   id: number;
+  workspace_id?: number | null;
   title: string;
   slug: string;
   prefix: string;

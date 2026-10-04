@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { XIcon, PlusIcon, CalendarIcon, UserIcon, AlertCircleIcon, LayersIcon } from 'lucide-react';
-import type { Board, Priority } from '../../types/kanban';
+import type { Board, Priority, User } from '../../types/kanban';
 
 type NewTaskModalProps = {
   board: Board;
+  members?: User[];
   isOpen: boolean;
   onClose: () => void;
 };
 
-export function NewTaskModal({ board, isOpen, onClose }: NewTaskModalProps) {
+export function NewTaskModal({ board, members = [], isOpen, onClose }: NewTaskModalProps) {
   if (!isOpen) return null;
 
   const [title, setTitle] = useState('');
@@ -17,7 +18,8 @@ export function NewTaskModal({ board, isOpen, onClose }: NewTaskModalProps) {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState('');
-  const [assigneeName, setAssigneeName] = useState('Team Member');
+  const [assigneeId, setAssigneeId] = useState<number | ''>(members[0]?.id || '');
+  const [assigneeName, setAssigneeName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,6 +35,7 @@ export function NewTaskModal({ board, isOpen, onClose }: NewTaskModalProps) {
         description: description.trim() || null,
         priority,
         due_date: dueDate || null,
+        assignee_id: assigneeId ? Number(assigneeId) : null,
         assignee_name: assigneeName.trim() || null,
       },
       {
@@ -50,13 +53,11 @@ export function NewTaskModal({ board, isOpen, onClose }: NewTaskModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Dialog */}
       <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl shadow-black/60 overflow-hidden my-auto">
         <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-900/90">
           <div className="flex items-center gap-2.5">
@@ -145,13 +146,28 @@ export function NewTaskModal({ board, isOpen, onClose }: NewTaskModalProps) {
                 <UserIcon className="h-3 w-3" />
                 Assignee
               </label>
-              <input
-                type="text"
-                value={assigneeName}
-                onChange={(e) => setAssigneeName(e.target.value)}
-                placeholder="Name..."
-                className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-              />
+              {members.length > 0 ? (
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                >
+                  <option value="">Unassigned</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.email})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={assigneeName}
+                  onChange={(e) => setAssigneeName(e.target.value)}
+                  placeholder="Name..."
+                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                />
+              )}
             </div>
           </div>
 

@@ -11,6 +11,7 @@ class Task extends Model
     protected $fillable = [
         'board_id',
         'column_id',
+        'assignee_id',
         'task_key',
         'title',
         'description',
@@ -35,6 +36,11 @@ class Task extends Model
     public function column(): BelongsTo
     {
         return $this->belongsTo(Column::class);
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
     }
 
     public function activities(): HasMany

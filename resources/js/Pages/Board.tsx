@@ -1,23 +1,38 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { PlusIcon, SparklesIcon, CheckCircle2Icon, ClockIcon, HashIcon } from 'lucide-react';
+import { PlusIcon, SparklesIcon, CheckCircle2Icon, ClockIcon, HashIcon, UsersIcon } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { KanbanColumn } from '../components/kanban/KanbanColumn';
 import { TaskModal } from '../components/kanban/TaskModal';
 import { NewTaskModal } from '../components/kanban/NewTaskModal';
 import { AddColumnModal } from '../components/kanban/AddColumnModal';
-import type { Board, Column, Task, Priority, BoardSummary } from '../types/kanban';
+import { WorkspaceModal } from '../components/workspace/WorkspaceModal';
+import { MembersModal } from '../components/workspace/MembersModal';
+import type { Board, Column, Task, Priority, BoardSummary, Workspace, User } from '../types/kanban';
 
 type BoardPageProps = {
   board: Board;
   allBoards: BoardSummary[];
+  workspace?: Workspace | null;
+  allWorkspaces?: Workspace[];
+  workspaceMembers?: User[];
+  authUser?: User | null;
 };
 
-export default function BoardPage({ board, allBoards }: BoardPageProps) {
+export default function BoardPage({
+  board,
+  allBoards,
+  workspace,
+  allWorkspaces = [],
+  workspaceMembers = [],
+  authUser,
+}: BoardPageProps) {
   const [columns, setColumns] = useState<Column[]>(board.columns || []);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<Priority | 'all'>('all');
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
@@ -25,7 +40,6 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
   // Sync columns when server data updates (via Inertia reload/actions)
   useEffect(() => {
     setColumns(board.columns || []);
-    // Also update selectedTask if modal is currently open
     if (selectedTask) {
       for (const col of board.columns) {
         const found = col.tasks.find((t) => t.id === selectedTask.id);
@@ -37,7 +51,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
     }
   }, [board]);
 
-  // Handle Quick Add Task in a specific column
+  // Quick Add Task in a specific column
   const handleQuickAddTask = (columnId: number, title: string) => {
     router.post(
       `/boards/${board.id}/tasks`,
@@ -52,7 +66,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
     );
   };
 
-  // Handle Delete Column
+  // Delete Column
   const handleDeleteColumn = (columnId: number) => {
     if (confirm('Delete this column and all tasks inside it?')) {
       router.delete(`/columns/${columnId}`, {
@@ -110,7 +124,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
       `/tasks/${currentTask.id}/move`,
       {
         column_id: targetColumnId,
-        order: 9999, // Backend places it at the end
+        order: 9999,
       },
       {
         preserveScroll: true,
@@ -123,12 +137,10 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
   const filteredColumns = useMemo(() => {
     return columns.map((col) => {
       const filteredTasks = col.tasks.filter((task) => {
-        // Priority filter
         if (selectedPriority !== 'all' && task.priority !== selectedPriority) {
           return false;
         }
 
-        // Search query filter (matches task_key e.g. GUC-1, title, or label)
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
           const matchKey = task.task_key.toLowerCase().includes(q);
@@ -148,7 +160,6 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
     });
   }, [columns, searchQuery, selectedPriority]);
 
-  // Aggregate stats
   const totalTasks = columns.reduce((acc, col) => acc + col.tasks.length, 0);
   const doneColumn = columns.find((c) => c.title.toLowerCase().includes('done'));
   const completedTasks = doneColumn ? doneColumn.tasks.length : 0;
@@ -160,12 +171,18 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
       {/* Top Navbar */}
       <Navbar
         board={board}
+        workspace={workspace}
+        allWorkspaces={allWorkspaces}
+        membersCount={workspaceMembers.length}
+        authUser={authUser}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedPriority={selectedPriority}
         onPriorityChange={setSelectedPriority}
         onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
         onOpenAddColumnModal={() => setIsAddColumnModalOpen(true)}
+        onOpenWorkspaceModal={() => setIsWorkspaceModalOpen(true)}
+        onOpenMembersModal={() => setIsMembersModalOpen(true)}
       />
 
       {/* Sub-header / Board Stats Bar */}
@@ -190,6 +207,19 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
             <span>Completed:</span>
             <span className="font-semibold text-emerald-400">{completedTasks}</span>
           </div>
+
+          {workspace && (
+            <button
+              onClick={() => setIsMembersModalOpen(true)}
+              className="flex items-center gap-1.5 text-slate-400 hover:text-brand-300 transition-colors"
+            >
+              <UsersIcon className="h-3.5 w-3.5 text-brand-400" />
+              <span>Workspace:</span>
+              <span className="font-medium text-slate-200 underline decoration-slate-700 underline-offset-2">
+                {workspace.name}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -200,7 +230,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
         </div>
       </div>
 
-      {/* Kanban Board Canvas (Horizontal Scroll) */}
+      {/* Kanban Board Canvas */}
       <main className="flex-1 overflow-x-auto overflow-y-hidden p-6">
         <div className="flex h-full items-start gap-4">
           {filteredColumns.map((column) => (
@@ -232,6 +262,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
       {/* Task Details / Edit Modal */}
       <TaskModal
         task={selectedTask}
+        members={workspaceMembers}
         isOpen={!!selectedTask}
         onClose={() => setSelectedTask(null)}
       />
@@ -239,6 +270,7 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
       {/* New Task Modal */}
       <NewTaskModal
         board={board}
+        members={workspaceMembers}
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
       />
@@ -248,6 +280,21 @@ export default function BoardPage({ board, allBoards }: BoardPageProps) {
         board={board}
         isOpen={isAddColumnModalOpen}
         onClose={() => setIsAddColumnModalOpen(false)}
+      />
+
+      {/* Create Workspace Modal */}
+      <WorkspaceModal
+        isOpen={isWorkspaceModalOpen}
+        onClose={() => setIsWorkspaceModalOpen(false)}
+      />
+
+      {/* Workspace Members Modal */}
+      <MembersModal
+        workspace={workspace || null}
+        members={workspaceMembers}
+        currentUser={authUser || null}
+        isOpen={isMembersModalOpen}
+        onClose={() => setIsMembersModalOpen(false)}
       />
     </div>
   );

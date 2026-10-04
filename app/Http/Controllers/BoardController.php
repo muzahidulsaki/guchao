@@ -6,7 +6,10 @@ use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
 use App\Models\TaskActivity;
+use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,8 +20,37 @@ class BoardController extends Controller
      */
     public function index()
     {
-        $board = Board::with(['columns.tasks.activities'])->first();
+        $user = Auth::user();
 
+        if ($user) {
+            $workspace = $user->workspaces()->first();
+            if (! $workspace) {
+                $workspace = Workspace::create([
+                    'name' => "{$user->name}'s Workspace",
+                    'owner_id' => $user->id,
+                    'color' => 'indigo',
+                ]);
+                $workspace->members()->attach($user->id, ['role' => 'owner']);
+            }
+
+            $board = $workspace->boards()->first();
+            if (! $board) {
+                $board = Board::create([
+                    'workspace_id' => $workspace->id,
+                    'title' => 'Product Pipeline',
+                    'prefix' => 'GUC',
+                    'color' => 'indigo',
+                ]);
+                Column::create(['board_id' => $board->id, 'title' => 'To Do', 'order' => 1, 'color' => '#64748B']);
+                Column::create(['board_id' => $board->id, 'title' => 'In Progress', 'order' => 2, 'color' => '#3B82F6']);
+                Column::create(['board_id' => $board->id, 'title' => 'Done', 'order' => 3, 'color' => '#10B981']);
+            }
+
+            return redirect()->route('boards.show', $board->id);
+        }
+
+        // Fallback for unauthenticated access or initial visit
+        $board = Board::first();
         if (! $board) {
             $board = Board::create([
                 'title' => 'Main Product Board',
@@ -41,7 +73,23 @@ class BoardController extends Controller
      */
     public function show(Board $board): Response
     {
-        $allBoards = Board::select('id', 'title', 'prefix', 'slug', 'color')->get();
+        $user = Auth::user();
+
+        // Load board's workspace and members
+        $workspace = $board->workspace;
+        if (! $workspace && $user) {
+            $workspace = $user->workspaces()->first();
+            if ($workspace) {
+                $board->update(['workspace_id' => $workspace->id]);
+            }
+        }
+
+        $allWorkspaces = $user ? $user->workspaces()->with('boards')->get() : [];
+        $workspaceMembers = $workspace ? $workspace->members()->select('users.id', 'users.name', 'users.email', 'users.avatar')->get() : [];
+
+        $allBoards = $workspace
+            ? $workspace->boards()->select('id', 'title', 'prefix', 'slug', 'color')->get()
+            : Board::select('id', 'title', 'prefix', 'slug', 'color')->get();
 
         $board->load([
             'columns' => function ($q) {
@@ -53,11 +101,16 @@ class BoardController extends Controller
             'columns.tasks.activities' => function ($q) {
                 $q->latest();
             },
+            'columns.tasks.assignee',
         ]);
 
         return Inertia::render('Board', [
             'board' => $board,
             'allBoards' => $allBoards,
+            'workspace' => $workspace,
+            'allWorkspaces' => $allWorkspaces,
+            'workspaceMembers' => $workspaceMembers,
+            'authUser' => $user,
         ]);
     }
 
@@ -73,6 +126,7 @@ class BoardController extends Controller
             'priority' => 'nullable|in:urgent,high,medium,low',
             'due_date' => 'nullable|date',
             'labels' => 'nullable|array',
+            'assignee_id' => 'nullable|exists:users,id',
             'assignee_name' => 'nullable|string|max:100',
         ]);
 
@@ -81,9 +135,23 @@ class BoardController extends Controller
 
         $maxOrder = Task::where('column_id', $validated['column_id'])->max('order') ?? 0;
 
+        $assigneeName = $validated['assignee_name'] ?? null;
+        $assigneeAvatar = null;
+
+        if (! empty($validated['assignee_id'])) {
+            $assigneeUser = User::find($validated['assignee_id']);
+            if ($assigneeUser) {
+                $assigneeName = $assigneeUser->name;
+                $assigneeAvatar = $assigneeUser->avatar ?: substr($assigneeUser->name, 0, 1);
+            }
+        } elseif ($assigneeName) {
+            $assigneeAvatar = substr($assigneeName, 0, 1);
+        }
+
         $task = Task::create([
             'board_id' => $board->id,
             'column_id' => $validated['column_id'],
+            'assignee_id' => $validated['assignee_id'] ?? null,
             'task_key' => $taskKey,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -91,13 +159,14 @@ class BoardController extends Controller
             'order' => $maxOrder + 1,
             'due_date' => $validated['due_date'] ?? null,
             'labels' => $validated['labels'] ?? [],
-            'assignee_name' => $validated['assignee_name'] ?? 'Team Member',
-            'assignee_avatar' => substr($validated['assignee_name'] ?? 'T', 0, 1),
+            'assignee_name' => $assigneeName,
+            'assignee_avatar' => $assigneeAvatar,
         ]);
 
+        $creatorName = Auth::user() ? Auth::user()->name : 'Member';
         TaskActivity::create([
             'task_id' => $task->id,
-            'user_name' => 'Admin',
+            'user_name' => $creatorName,
             'type' => 'activity',
             'content' => "Created task {$taskKey}",
         ]);
@@ -106,7 +175,7 @@ class BoardController extends Controller
     }
 
     /**
-     * Update task details (title, description, priority, due date, labels).
+     * Update task details (title, description, priority, due date, labels, assignee).
      */
     public function updateTask(Request $request, Task $task)
     {
@@ -116,10 +185,36 @@ class BoardController extends Controller
             'priority' => 'nullable|in:urgent,high,medium,low',
             'due_date' => 'nullable|date',
             'labels' => 'nullable|array',
+            'assignee_id' => 'nullable',
             'assignee_name' => 'nullable|string|max:100',
         ]);
 
-        $task->update($validated);
+        $assigneeName = $validated['assignee_name'] ?? $task->assignee_name;
+        $assigneeAvatar = $task->assignee_avatar;
+
+        if (array_key_exists('assignee_id', $validated)) {
+            if (! empty($validated['assignee_id'])) {
+                $assigneeUser = User::find($validated['assignee_id']);
+                if ($assigneeUser) {
+                    $assigneeName = $assigneeUser->name;
+                    $assigneeAvatar = $assigneeUser->avatar ?: substr($assigneeUser->name, 0, 1);
+                }
+            } else {
+                $assigneeName = null;
+                $assigneeAvatar = null;
+            }
+        }
+
+        $task->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'priority' => $validated['priority'] ?? $task->priority,
+            'due_date' => $validated['due_date'] ?? null,
+            'labels' => $validated['labels'] ?? [],
+            'assignee_id' => $validated['assignee_id'] ?? null,
+            'assignee_name' => $assigneeName,
+            'assignee_avatar' => $assigneeAvatar,
+        ]);
 
         return back()->with('success', "Task {$task->task_key} updated.");
     }
@@ -142,10 +237,11 @@ class BoardController extends Controller
             'order' => $validated['order'],
         ]);
 
-        if ($oldColumn->id !== $newColumn->id) {
+        if ($oldColumn && $oldColumn->id !== $newColumn->id) {
+            $userName = Auth::user() ? Auth::user()->name : 'Member';
             TaskActivity::create([
                 'task_id' => $task->id,
-                'user_name' => 'Member',
+                'user_name' => $userName,
                 'type' => 'activity',
                 'content' => "Moved from {$oldColumn->title} to {$newColumn->title}",
             ]);
@@ -207,9 +303,11 @@ class BoardController extends Controller
             'user_name' => 'nullable|string|max:100',
         ]);
 
+        $userName = Auth::user() ? Auth::user()->name : ($validated['user_name'] ?? 'Team Member');
+
         TaskActivity::create([
             'task_id' => $task->id,
-            'user_name' => $validated['user_name'] ?? 'Team Member',
+            'user_name' => $userName,
             'type' => 'comment',
             'content' => $validated['content'],
         ]);
