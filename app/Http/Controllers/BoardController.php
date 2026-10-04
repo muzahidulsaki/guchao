@@ -16,51 +16,52 @@ use Inertia\Response;
 class BoardController extends Controller
 {
     /**
+     * Authorize that the authenticated user belongs to the board's workspace.
+     */
+    private function authorizeBoardAccess(Board $board, ?User $user)
+    {
+        if (! $user) {
+            abort(401, 'Please sign in to continue.');
+        }
+
+        if ($board->workspace_id) {
+            $isMember = $board->workspace->members()->where('users.id', $user->id)->exists();
+            if (! $isMember) {
+                abort(403, 'Unauthorized: You are not a member of this workspace.');
+            }
+        }
+    }
+
+    /**
      * Display boards list or redirect to primary board.
      */
     public function index()
     {
         $user = Auth::user();
 
-        if ($user) {
-            $workspace = $user->workspaces()->first();
-            if (! $workspace) {
-                $workspace = Workspace::create([
-                    'name' => "{$user->name}'s Workspace",
-                    'owner_id' => $user->id,
-                    'color' => 'indigo',
-                ]);
-                $workspace->members()->attach($user->id, ['role' => 'owner']);
-            }
-
-            $board = $workspace->boards()->first();
-            if (! $board) {
-                $board = Board::create([
-                    'workspace_id' => $workspace->id,
-                    'title' => 'Product Pipeline',
-                    'slug' => \Illuminate\Support\Str::slug('product-pipeline') . '-' . \Illuminate\Support\Str::random(5),
-                    'prefix' => 'GUC',
-                    'color' => 'indigo',
-                ]);
-                Column::create(['board_id' => $board->id, 'title' => 'To Do', 'order' => 1, 'color' => '#64748B']);
-                Column::create(['board_id' => $board->id, 'title' => 'In Progress', 'order' => 2, 'color' => '#3B82F6']);
-                Column::create(['board_id' => $board->id, 'title' => 'Done', 'order' => 3, 'color' => '#10B981']);
-            }
-
-            return redirect()->route('boards.show', $board->id);
+        if (! $user) {
+            return redirect()->route('login');
         }
 
-        // Fallback for unauthenticated access or initial visit
-        $board = Board::first();
+        $workspace = $user->workspaces()->first();
+        if (! $workspace) {
+            $workspace = Workspace::create([
+                'name' => "{$user->name}'s Workspace",
+                'owner_id' => $user->id,
+                'color' => 'indigo',
+            ]);
+            $workspace->members()->attach($user->id, ['role' => 'owner']);
+        }
+
+        $board = $workspace->boards()->first();
         if (! $board) {
             $board = Board::create([
-                'title' => 'Main Product Board',
-                'slug' => 'main-product-board',
+                'workspace_id' => $workspace->id,
+                'title' => 'Product Pipeline',
+                'slug' => 'product-pipeline-' . $workspace->id,
                 'prefix' => 'GUC',
                 'color' => 'indigo',
-                'description' => 'Agile task management and Kanban pipeline',
             ]);
-
             Column::create(['board_id' => $board->id, 'title' => 'To Do', 'order' => 1, 'color' => '#64748B']);
             Column::create(['board_id' => $board->id, 'title' => 'In Progress', 'order' => 2, 'color' => '#3B82F6']);
             Column::create(['board_id' => $board->id, 'title' => 'Done', 'order' => 3, 'color' => '#10B981']);
@@ -72,21 +73,41 @@ class BoardController extends Controller
     /**
      * Show a specific Kanban board.
      */
-    public function show(Board $board): Response
+    public function show(Board $board)
     {
         $user = Auth::user();
 
-        // Load board's workspace and members
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        // Strict Workspace Authorization: User can ONLY view boards of workspaces they are a member of!
         $workspace = $board->workspace;
-        if (! $workspace && $user) {
-            $workspace = $user->workspaces()->first();
-            if ($workspace) {
-                $board->update(['workspace_id' => $workspace->id]);
+        if ($workspace) {
+            $isMember = $workspace->members()->where('users.id', $user->id)->exists();
+            if (! $isMember) {
+                // If user changes URL to someone else's workspace, redirect them to their own workspace board
+                $userWorkspace = $user->workspaces()->first();
+                if ($userWorkspace && $userWorkspace->boards()->exists()) {
+                    return redirect()->route('boards.show', $userWorkspace->boards()->first()->id)
+                        ->with('error', 'Unauthorized: You do not have permission to access that workspace.');
+                }
+
+                abort(403, 'Unauthorized access: You are not a member of this workspace.');
+            }
+        } elseif ($board->workspace_id === null) {
+            // If legacy board without workspace, attach to current user's workspace
+            $userWorkspace = $user->workspaces()->first();
+            if ($userWorkspace) {
+                $board->update(['workspace_id' => $userWorkspace->id]);
+                $workspace = $userWorkspace;
             }
         }
 
-        $allWorkspaces = $user ? $user->workspaces()->with('boards')->get() : [];
-        $workspaceMembers = $workspace ? $workspace->members()->select('users.id', 'users.name', 'users.email', 'users.avatar')->get() : [];
+        $allWorkspaces = $user->workspaces()->with('boards')->get();
+        $workspaceMembers = $workspace
+            ? $workspace->members()->select('users.id', 'users.name', 'users.email', 'users.avatar')->get()
+            : [];
 
         $allBoards = $workspace
             ? $workspace->boards()->select('id', 'title', 'prefix', 'slug', 'color')->get()
@@ -120,6 +141,8 @@ class BoardController extends Controller
      */
     public function storeTask(Request $request, Board $board)
     {
+        $this->authorizeBoardAccess($board, Auth::user());
+
         $validated = $request->validate([
             'column_id' => 'required|exists:columns,id',
             'title' => 'required|string|max:255',
@@ -131,9 +154,7 @@ class BoardController extends Controller
             'assignee_name' => 'nullable|string|max:100',
         ]);
 
-        // Auto task ID generation: e.g. GUC-1, GUC-2, GUC-101
         $taskKey = $board->generateNextTaskKey();
-
         $maxOrder = Task::where('column_id', $validated['column_id'])->max('order') ?? 0;
 
         $assigneeName = $validated['assignee_name'] ?? null;
@@ -180,6 +201,8 @@ class BoardController extends Controller
      */
     public function updateTask(Request $request, Task $task)
     {
+        $this->authorizeBoardAccess($task->board, Auth::user());
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -221,10 +244,12 @@ class BoardController extends Controller
     }
 
     /**
-     * Move task across columns or reorder within column (Drag & Drop persistence).
+     * Move task across columns or reorder within column.
      */
     public function moveTask(Request $request, Task $task)
     {
+        $this->authorizeBoardAccess($task->board, Auth::user());
+
         $validated = $request->validate([
             'column_id' => 'required|exists:columns,id',
             'order' => 'required|integer',
@@ -256,6 +281,8 @@ class BoardController extends Controller
      */
     public function deleteTask(Task $task)
     {
+        $this->authorizeBoardAccess($task->board, Auth::user());
+
         $key = $task->task_key;
         $task->delete();
 
@@ -267,6 +294,8 @@ class BoardController extends Controller
      */
     public function storeColumn(Request $request, Board $board)
     {
+        $this->authorizeBoardAccess($board, Auth::user());
+
         $validated = $request->validate([
             'title' => 'required|string|max:100',
             'color' => 'nullable|string|max:50',
@@ -289,6 +318,8 @@ class BoardController extends Controller
      */
     public function deleteColumn(Column $column)
     {
+        $this->authorizeBoardAccess($column->board, Auth::user());
+
         $column->delete();
 
         return back()->with('success', 'Column deleted.');
@@ -299,6 +330,8 @@ class BoardController extends Controller
      */
     public function storeComment(Request $request, Task $task)
     {
+        $this->authorizeBoardAccess($task->board, Auth::user());
+
         $validated = $request->validate([
             'content' => 'required|string|max:1000',
             'user_name' => 'nullable|string|max:100',
