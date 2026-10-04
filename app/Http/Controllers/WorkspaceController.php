@@ -37,6 +37,7 @@ class WorkspaceController extends Controller
         $board = Board::create([
             'workspace_id' => $workspace->id,
             'title' => 'Project Pipeline',
+            'slug' => \Illuminate\Support\Str::slug($workspace->name . '-pipeline') . '-' . \Illuminate\Support\Str::random(5),
             'prefix' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $validated['name']), 0, 3)) ?: 'PRJ',
             'color' => $workspace->color,
         ]);

@@ -38,6 +38,7 @@ class BoardController extends Controller
                 $board = Board::create([
                     'workspace_id' => $workspace->id,
                     'title' => 'Product Pipeline',
+                    'slug' => \Illuminate\Support\Str::slug('product-pipeline') . '-' . \Illuminate\Support\Str::random(5),
                     'prefix' => 'GUC',
                     'color' => 'indigo',
                 ]);

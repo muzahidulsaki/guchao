@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Board extends Model
 {
@@ -17,6 +18,15 @@ class Board extends Model
         'color',
         'description',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($board) {
+            if (empty($board->slug)) {
+                $board->slug = Str::slug($board->title ?: 'board') . '-' . Str::random(6);
+            }
+        });
+    }
 
     public function workspace(): BelongsTo
     {
