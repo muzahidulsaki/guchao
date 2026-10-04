@@ -54,7 +54,7 @@ export function KanbanColumn({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex h-full w-[310px] min-w-[310px] shrink-0 flex-col rounded-2xl border transition-colors duration-150 ${
+      className={`flex h-full w-[84vw] max-w-[330px] sm:w-[310px] min-w-[84vw] sm:min-w-[310px] snap-center shrink-0 flex-col rounded-2xl border transition-colors duration-150 ${
         isDragOver
           ? 'border-brand-500/70 bg-slate-900/90 ring-2 ring-brand-500/20'
           : 'border-slate-800/80 bg-slate-950/70'
@@ -87,7 +87,7 @@ export function KanbanColumn({
       </div>
 
       {/* Task Cards List (Scrollable) */}
-      <div className="flex-1 space-y-2.5 overflow-y-auto p-3 max-h-[calc(100vh-250px)]">
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-2.5 sm:p-3 max-h-[calc(100vh-230px)] sm:max-h-[calc(100vh-250px)]">
         {tasks.map((task) => (
           <TaskCard
             key={task.id}

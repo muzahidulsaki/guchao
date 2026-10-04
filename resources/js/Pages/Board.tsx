@@ -186,10 +186,10 @@ export default function BoardPage({
       />
 
       {/* Sub-header / Board Stats Bar */}
-      <div className="flex items-center justify-between border-b border-slate-900 bg-slate-950/60 px-6 py-2.5 text-xs text-slate-400">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between border-b border-slate-900 bg-slate-950/60 px-4 sm:px-6 py-2 sm:py-2.5 text-xs text-slate-400 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-4 sm:gap-6 min-w-max">
           <div className="flex items-center gap-2 font-mono">
-            <HashIcon className="h-3.5 w-3.5 text-brand-400" />
+            <HashIcon className="h-3.5 w-3.5 text-brand-400 shrink-0" />
             <span className="text-slate-300 font-semibold">Prefix:</span>
             <span className="rounded bg-brand-500/10 px-1.5 py-0.5 text-brand-300 font-bold">
               {board.prefix}-*
@@ -197,23 +197,23 @@ export default function BoardPage({
           </div>
 
           <div className="flex items-center gap-2">
-            <ClockIcon className="h-3.5 w-3.5 text-slate-500" />
-            <span>Total Tasks:</span>
+            <ClockIcon className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+            <span>Total:</span>
             <span className="font-semibold text-slate-200">{totalTasks}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <CheckCircle2Icon className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Completed:</span>
+            <CheckCircle2Icon className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+            <span>Done:</span>
             <span className="font-semibold text-emerald-400">{completedTasks}</span>
           </div>
 
           {workspace && (
             <button
               onClick={() => setIsMembersModalOpen(true)}
-              className="flex items-center gap-1.5 text-slate-400 hover:text-brand-300 transition-colors"
+              className="flex items-center gap-1.5 text-slate-400 hover:text-brand-300 transition-colors shrink-0"
             >
-              <UsersIcon className="h-3.5 w-3.5 text-brand-400" />
+              <UsersIcon className="h-3.5 w-3.5 text-brand-400 shrink-0" />
               <span>Workspace:</span>
               <span className="font-medium text-slate-200 underline decoration-slate-700 underline-offset-2">
                 {workspace.name}
@@ -222,8 +222,8 @@ export default function BoardPage({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+        <div className="hidden lg:flex items-center gap-3 shrink-0 pl-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
             <SparklesIcon className="h-3 w-3 text-amber-400" />
             Drag & drop cards across columns to reorder
           </span>
@@ -231,8 +231,8 @@ export default function BoardPage({
       </div>
 
       {/* Kanban Board Canvas */}
-      <main className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-        <div className="flex h-full items-start gap-4">
+      <main className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6 snap-x snap-mandatory sm:snap-none scroll-smooth">
+        <div className="flex h-full items-start gap-3 sm:gap-4 pb-20 sm:pb-0">
           {filteredColumns.map((column) => (
             <KanbanColumn
               key={column.id}
@@ -247,7 +247,7 @@ export default function BoardPage({
           ))}
 
           {/* Add Another List / Column Button */}
-          <div className="w-[280px] shrink-0">
+          <div className="w-[84vw] max-w-[330px] sm:w-[280px] min-w-[84vw] sm:min-w-[280px] shrink-0 snap-center">
             <button
               onClick={() => setIsAddColumnModalOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-4 text-xs font-semibold text-slate-400 hover:border-brand-500/50 hover:bg-slate-900/60 hover:text-brand-300 transition-all"
@@ -258,6 +258,17 @@ export default function BoardPage({
           </div>
         </div>
       </main>
+
+      {/* Mobile Floating Action Button (FAB) for fast task creation */}
+      <div className="sm:hidden fixed bottom-5 right-5 z-40">
+        <button
+          onClick={() => setIsNewTaskModalOpen(true)}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-xl shadow-brand-600/40 active:scale-95 transition-transform"
+          aria-label="Create Task"
+        >
+          <PlusIcon className="h-6 w-6 stroke-[2.5]" />
+        </button>
+      </div>
 
       {/* Task Details / Edit Modal */}
       <TaskModal
