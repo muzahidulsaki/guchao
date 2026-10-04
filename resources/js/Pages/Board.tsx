@@ -133,6 +133,70 @@ export default function BoardPage({
     );
   };
 
+  // Move task via 3-dot dropdown menu / status selector
+  const handleMoveTask = (taskId: number, targetColumnId: number) => {
+    let targetTask: Task | null = null;
+    for (const col of columns) {
+      const found = col.tasks.find((t) => t.id === taskId);
+      if (found) {
+        targetTask = found;
+        break;
+      }
+    }
+    if (!targetTask || targetTask.column_id === targetColumnId) return;
+
+    const currentTask = targetTask;
+
+    // Optimistic UI update
+    setColumns((prevCols) => {
+      const nextCols = prevCols.map((col) => ({
+        ...col,
+        tasks: [...col.tasks],
+      }));
+
+      // Remove from old column
+      const sourceCol = nextCols.find((c) => c.id === currentTask.column_id);
+      if (sourceCol) {
+        sourceCol.tasks = sourceCol.tasks.filter((t) => t.id !== currentTask.id);
+      }
+
+      // Add to new column
+      const destCol = nextCols.find((c) => c.id === targetColumnId);
+      if (destCol) {
+        const updatedTask = {
+          ...currentTask,
+          column_id: targetColumnId,
+          order: destCol.tasks.length + 1,
+        };
+        destCol.tasks.push(updatedTask);
+      }
+
+      return nextCols;
+    });
+
+    // Send backend move request
+    router.post(
+      `/tasks/${currentTask.id}/move`,
+      {
+        column_id: targetColumnId,
+        order: 9999,
+      },
+      {
+        preserveScroll: true,
+        preserveState: true,
+      }
+    );
+  };
+
+  // Delete task via 3-dot dropdown menu
+  const handleDeleteTask = (taskId: number, taskKey: string) => {
+    if (confirm(`Are you sure you want to delete task ${taskKey}?`)) {
+      router.delete(`/tasks/${taskId}`, {
+        preserveScroll: true,
+      });
+    }
+  };
+
   // Filter tasks per column based on search & priority filter
   const filteredColumns = useMemo(() => {
     return columns.map((col) => {
@@ -237,12 +301,15 @@ export default function BoardPage({
             <KanbanColumn
               key={column.id}
               column={column}
+              allColumns={columns}
               tasks={column.tasks}
               onSelectTask={(task) => setSelectedTask(task)}
               onAddTask={handleQuickAddTask}
               onDeleteColumn={handleDeleteColumn}
               onDragStart={handleDragStart}
               onDropTask={handleDropTask}
+              onMoveTask={handleMoveTask}
+              onDeleteTask={handleDeleteTask}
             />
           ))}
 

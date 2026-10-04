@@ -5,22 +5,28 @@ import type { Column, Task } from '../../types/kanban';
 
 type KanbanColumnProps = {
   column: Column;
+  allColumns?: Column[];
   tasks: Task[];
   onSelectTask: (task: Task) => void;
   onAddTask: (columnId: number, title: string) => void;
   onDeleteColumn: (columnId: number) => void;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, task: Task) => void;
   onDropTask: (columnId: number) => void;
+  onMoveTask?: (taskId: number, targetColumnId: number) => void;
+  onDeleteTask?: (taskId: number, taskKey: string) => void;
 };
 
 export function KanbanColumn({
   column,
+  allColumns = [],
   tasks,
   onSelectTask,
   onAddTask,
   onDeleteColumn,
   onDragStart,
   onDropTask,
+  onMoveTask,
+  onDeleteTask,
 }: KanbanColumnProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -92,8 +98,11 @@ export function KanbanColumn({
           <TaskCard
             key={task.id}
             task={task}
+            allColumns={allColumns}
             onSelect={onSelectTask}
             onDragStart={onDragStart}
+            onMoveTask={onMoveTask}
+            onDeleteTask={onDeleteTask}
           />
         ))}
 
