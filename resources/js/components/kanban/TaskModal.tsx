@@ -38,7 +38,11 @@ export function TaskModal({ task, members = [], isOpen, onClose }: TaskModalProp
   const [description, setDescription] = useState(task.description || '');
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [dueDate, setDueDate] = useState(task.due_date || '');
-  const [assigneeId, setAssigneeId] = useState<number | ''>(task.assignee_id || '');
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<number[]>(
+    task.assignees && task.assignees.length > 0
+      ? task.assignees.map((a) => a.id)
+      : (task.assignee_id ? [task.assignee_id] : [])
+  );
   const [assigneeName, setAssigneeName] = useState(task.assignee_name || '');
   const [labels, setLabels] = useState<string[]>(task.labels || []);
   const [newLabelInput, setNewLabelInput] = useState('');
@@ -46,12 +50,23 @@ export function TaskModal({ task, members = [], isOpen, onClose }: TaskModalProp
   const [isSaving, setIsSaving] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
 
+  const toggleAssignee = (id: number) => {
+    if (selectedAssigneeIds.includes(id)) {
+      setSelectedAssigneeIds(selectedAssigneeIds.filter((i) => i !== id));
+    } else {
+      setSelectedAssigneeIds([...selectedAssigneeIds, id]);
+    }
+  };
+
   useEffect(() => {
     setTitle(task.title);
     setDescription(task.description || '');
     setPriority(task.priority);
     setDueDate(task.due_date || '');
-    setAssigneeId(task.assignee_id || '');
+    const ids = task.assignees && task.assignees.length > 0
+      ? task.assignees.map((a) => a.id)
+      : (task.assignee_id ? [task.assignee_id] : []);
+    setSelectedAssigneeIds(ids);
     setAssigneeName(task.assignee_name || '');
     setLabels(task.labels || []);
   }, [task]);
@@ -75,8 +90,7 @@ export function TaskModal({ task, members = [], isOpen, onClose }: TaskModalProp
         description,
         priority,
         due_date: dueDate || null,
-        assignee_id: assigneeId ? Number(assigneeId) : null,
-        assignee_name: assigneeName || null,
+        assignee_ids: selectedAssigneeIds,
         labels,
       },
       {
@@ -222,25 +236,43 @@ export function TaskModal({ task, members = [], isOpen, onClose }: TaskModalProp
                 />
               </div>
 
-              {/* Assignee */}
+              {/* Multiple Assignees */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                  <UserIcon className="h-3 w-3" />
-                  Assignee
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <UserIcon className="h-3 w-3" />
+                    Assignees ({selectedAssigneeIds.length})
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-normal">Click to toggle team members</span>
                 </label>
                 {members.length > 0 ? (
-                  <select
-                    value={assigneeId}
-                    onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
-                  >
-                    <option value="">Unassigned</option>
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.email})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-950 border border-slate-700/80 max-h-32 overflow-y-auto">
+                    {members.map((m) => {
+                      const isSelected = selectedAssigneeIds.includes(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => toggleAssignee(m.id)}
+                          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all ${
+                            isSelected
+                              ? 'bg-brand-600 text-white shadow-sm ring-1 ring-brand-400'
+                              : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          {m.avatar ? (
+                            <img src={m.avatar} alt={m.name} className="h-4 w-4 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <span className="h-4 w-4 rounded-full bg-slate-800 flex items-center justify-center text-[9px] font-bold shrink-0">
+                              {m.name.slice(0, 1).toUpperCase()}
+                            </span>
+                          )}
+                          <span className="truncate max-w-[100px]">{m.name.split(' ')[0]}</span>
+                          {isSelected && <span className="text-[10px] ml-0.5">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <input
                     type="text"

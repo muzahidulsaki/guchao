@@ -22,6 +22,7 @@ export type Task = {
   column_id: number;
   assignee_id?: number | null;
   assignee?: User | null;
+  assignees?: User[];
   task_key: string; // e.g. GUC-101
   title: string;
   description: string | null;

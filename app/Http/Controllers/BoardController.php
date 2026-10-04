@@ -123,7 +123,8 @@ class BoardController extends Controller
             'columns.tasks.activities' => function ($q) {
                 $q->latest();
             },
-            'columns.tasks.assignee',
+            'columns.tasks.assignees:users.id,users.name,users.email,users.avatar',
+            'columns.tasks.assignee:users.id,users.name,users.email,users.avatar',
         ]);
 
         return Inertia::render('Board', [
@@ -150,6 +151,8 @@ class BoardController extends Controller
             'priority' => 'nullable|in:urgent,high,medium,low',
             'due_date' => 'nullable|date',
             'labels' => 'nullable|array',
+            'assignee_ids' => 'nullable|array',
+            'assignee_ids.*' => 'exists:users,id',
             'assignee_id' => 'nullable|exists:users,id',
             'assignee_name' => 'nullable|string|max:100',
         ]);
@@ -157,11 +160,17 @@ class BoardController extends Controller
         $taskKey = $board->generateNextTaskKey();
         $maxOrder = Task::where('column_id', $validated['column_id'])->max('order') ?? 0;
 
+        $assigneeIds = $validated['assignee_ids'] ?? [];
+        if (empty($assigneeIds) && ! empty($validated['assignee_id'])) {
+            $assigneeIds = [$validated['assignee_id']];
+        }
+
+        $primaryAssigneeId = $assigneeIds[0] ?? null;
         $assigneeName = $validated['assignee_name'] ?? null;
         $assigneeAvatar = null;
 
-        if (! empty($validated['assignee_id'])) {
-            $assigneeUser = User::find($validated['assignee_id']);
+        if ($primaryAssigneeId) {
+            $assigneeUser = User::find($primaryAssigneeId);
             if ($assigneeUser) {
                 $assigneeName = $assigneeUser->name;
                 $assigneeAvatar = $assigneeUser->avatar ?: substr($assigneeUser->name, 0, 1);
@@ -173,7 +182,7 @@ class BoardController extends Controller
         $task = Task::create([
             'board_id' => $board->id,
             'column_id' => $validated['column_id'],
-            'assignee_id' => $validated['assignee_id'] ?? null,
+            'assignee_id' => $primaryAssigneeId,
             'task_key' => $taskKey,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -184,6 +193,10 @@ class BoardController extends Controller
             'assignee_name' => $assigneeName,
             'assignee_avatar' => $assigneeAvatar,
         ]);
+
+        if (! empty($assigneeIds)) {
+            $task->assignees()->sync($assigneeIds);
+        }
 
         $creatorName = Auth::user() ? Auth::user()->name : 'Member';
         TaskActivity::create([
@@ -197,7 +210,7 @@ class BoardController extends Controller
     }
 
     /**
-     * Update task details (title, description, priority, due date, labels, assignee).
+     * Update task details (title, description, priority, due date, labels, assignees).
      */
     public function updateTask(Request $request, Task $task)
     {
@@ -209,24 +222,32 @@ class BoardController extends Controller
             'priority' => 'nullable|in:urgent,high,medium,low',
             'due_date' => 'nullable|date',
             'labels' => 'nullable|array',
+            'assignee_ids' => 'nullable|array',
+            'assignee_ids.*' => 'exists:users,id',
             'assignee_id' => 'nullable',
             'assignee_name' => 'nullable|string|max:100',
         ]);
 
+        $assigneeIds = $validated['assignee_ids'] ?? null;
+        if ($assigneeIds !== null) {
+            $task->assignees()->sync($assigneeIds);
+            $primaryAssigneeId = $assigneeIds[0] ?? null;
+        } else {
+            $primaryAssigneeId = $validated['assignee_id'] ?? $task->assignee_id;
+        }
+
         $assigneeName = $validated['assignee_name'] ?? $task->assignee_name;
         $assigneeAvatar = $task->assignee_avatar;
 
-        if (array_key_exists('assignee_id', $validated)) {
-            if (! empty($validated['assignee_id'])) {
-                $assigneeUser = User::find($validated['assignee_id']);
-                if ($assigneeUser) {
-                    $assigneeName = $assigneeUser->name;
-                    $assigneeAvatar = $assigneeUser->avatar ?: substr($assigneeUser->name, 0, 1);
-                }
-            } else {
-                $assigneeName = null;
-                $assigneeAvatar = null;
+        if ($primaryAssigneeId) {
+            $assigneeUser = User::find($primaryAssigneeId);
+            if ($assigneeUser) {
+                $assigneeName = $assigneeUser->name;
+                $assigneeAvatar = $assigneeUser->avatar ?: substr($assigneeUser->name, 0, 1);
             }
+        } elseif ($assigneeIds !== null && empty($assigneeIds)) {
+            $assigneeName = null;
+            $assigneeAvatar = null;
         }
 
         $task->update([
@@ -235,7 +256,7 @@ class BoardController extends Controller
             'priority' => $validated['priority'] ?? $task->priority,
             'due_date' => $validated['due_date'] ?? null,
             'labels' => $validated['labels'] ?? [],
-            'assignee_id' => $validated['assignee_id'] ?? null,
+            'assignee_id' => $primaryAssigneeId,
             'assignee_name' => $assigneeName,
             'assignee_avatar' => $assigneeAvatar,
         ]);

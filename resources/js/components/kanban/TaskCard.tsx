@@ -87,25 +87,54 @@ export function TaskCard({ task, onSelect, onDragStart }: TaskCardProps) {
           )}
         </div>
 
-        {/* Assignee Avatar */}
-        <div className="flex items-center gap-1.5" title={task.assignee_name || 'Assignee'}>
-          {task.assignee_avatar && (task.assignee_avatar.startsWith('http') || task.assignee_avatar.startsWith('/')) ? (
-            <img
-              src={task.assignee_avatar}
-              alt={task.assignee_name || 'Assignee'}
-              className="h-6 w-6 rounded-full object-cover ring-1 ring-white/10 shrink-0"
-            />
-          ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 text-[10px] font-bold text-white shadow-sm ring-1 ring-white/10 shrink-0">
-              {task.assignee_avatar || (task.assignee_name ? task.assignee_name.slice(0, 1).toUpperCase() : 'M')}
-            </span>
-          )}
-          {task.assignee_name && (
-            <span className="text-[11px] text-slate-300 max-w-[70px] truncate hidden sm:inline">
-              {task.assignee_name.split(' ')[0]}
-            </span>
-          )}
-        </div>
+        {/* Assignees (Multiple or Single) */}
+        {task.assignees && task.assignees.length > 0 ? (
+          <div className="flex -space-x-1.5 overflow-hidden items-center">
+            {task.assignees.slice(0, 3).map((assignee) => (
+              assignee.avatar && (assignee.avatar.startsWith('http') || assignee.avatar.startsWith('/')) ? (
+                <img
+                  key={assignee.id}
+                  src={assignee.avatar}
+                  alt={assignee.name}
+                  title={assignee.name}
+                  className="h-6 w-6 rounded-full object-cover ring-2 ring-slate-900 shrink-0"
+                />
+              ) : (
+                <span
+                  key={assignee.id}
+                  title={assignee.name}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 text-[10px] font-bold text-white shadow-sm ring-2 ring-slate-900 shrink-0"
+                >
+                  {assignee.name.slice(0, 1).toUpperCase()}
+                </span>
+              )
+            ))}
+            {task.assignees.length > 3 && (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300 ring-2 ring-slate-900 shrink-0">
+                +{task.assignees.length - 3}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5" title={task.assignee_name || 'Assignee'}>
+            {task.assignee_avatar && (task.assignee_avatar.startsWith('http') || task.assignee_avatar.startsWith('/')) ? (
+              <img
+                src={task.assignee_avatar}
+                alt={task.assignee_name || 'Assignee'}
+                className="h-6 w-6 rounded-full object-cover ring-1 ring-white/10 shrink-0"
+              />
+            ) : (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 text-[10px] font-bold text-white shadow-sm ring-1 ring-white/10 shrink-0">
+                {task.assignee_avatar || (task.assignee_name ? task.assignee_name.slice(0, 1).toUpperCase() : 'M')}
+              </span>
+            )}
+            {task.assignee_name && (
+              <span className="text-[11px] text-slate-300 max-w-[70px] truncate hidden sm:inline">
+                {task.assignee_name.split(' ')[0]}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

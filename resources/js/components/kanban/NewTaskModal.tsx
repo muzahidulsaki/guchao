@@ -18,9 +18,17 @@ export function NewTaskModal({ board, members = [], isOpen, onClose }: NewTaskMo
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState('');
-  const [assigneeId, setAssigneeId] = useState<number | ''>(members[0]?.id || '');
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<number[]>([]);
   const [assigneeName, setAssigneeName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toggleAssignee = (id: number) => {
+    if (selectedAssigneeIds.includes(id)) {
+      setSelectedAssigneeIds(selectedAssigneeIds.filter((i) => i !== id));
+    } else {
+      setSelectedAssigneeIds([...selectedAssigneeIds, id]);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +43,7 @@ export function NewTaskModal({ board, members = [], isOpen, onClose }: NewTaskMo
         description: description.trim() || null,
         priority,
         due_date: dueDate || null,
-        assignee_id: assigneeId ? Number(assigneeId) : null,
+        assignee_ids: selectedAssigneeIds,
         assignee_name: assigneeName.trim() || null,
       },
       {
@@ -44,6 +52,7 @@ export function NewTaskModal({ board, members = [], isOpen, onClose }: NewTaskMo
           setTitle('');
           setDescription('');
           setDueDate('');
+          setSelectedAssigneeIds([]);
           onClose();
         },
         onFinish: () => setIsSubmitting(false),
@@ -127,48 +136,66 @@ export function NewTaskModal({ board, members = [], isOpen, onClose }: NewTaskMo
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <CalendarIcon className="h-3 w-3" />
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <CalendarIcon className="h-3 w-3" />
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            />
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+          {/* Multiple Assignees Selector */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
                 <UserIcon className="h-3 w-3" />
-                Assignee
-              </label>
-              {members.length > 0 ? (
-                <select
-                  value={assigneeId}
-                  onChange={(e) => setAssigneeId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                >
-                  <option value="">Unassigned</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.email})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={assigneeName}
-                  onChange={(e) => setAssigneeName(e.target.value)}
-                  placeholder="Name..."
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                />
-              )}
-            </div>
+                Assignees ({selectedAssigneeIds.length})
+              </span>
+              <span className="text-[10px] text-slate-500 font-normal">Click to assign one or multiple members</span>
+            </label>
+
+            {members.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-950 border border-slate-700/80 max-h-32 overflow-y-auto">
+                {members.map((m) => {
+                  const isSelected = selectedAssigneeIds.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => toggleAssignee(m.id)}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all ${
+                        isSelected
+                          ? 'bg-brand-600 text-white shadow-sm ring-1 ring-brand-400'
+                          : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      {m.avatar ? (
+                        <img src={m.avatar} alt={m.name} className="h-4 w-4 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <span className="h-4 w-4 rounded-full bg-slate-800 flex items-center justify-center text-[9px] font-bold shrink-0">
+                          {m.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="truncate max-w-[100px]">{m.name.split(' ')[0]}</span>
+                      {isSelected && <span className="text-[10px] ml-0.5">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={assigneeName}
+                onChange={(e) => setAssigneeName(e.target.value)}
+                placeholder="Assignee name..."
+                className="w-full rounded-xl border border-slate-700/80 bg-slate-950 px-3.5 py-2 text-xs font-medium text-slate-200 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none"
+              />
+            )}
           </div>
 
           <div>
