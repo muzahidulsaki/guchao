@@ -112,31 +112,39 @@ class WhatsAppService
                 // Column fallback
             }
 
-            $priorityEmoji = match ($task->priority) {
-                'urgent' => '🔴 *Urgent*',
-                'high' => '🟠 *High*',
-                'low' => '🟢 *Low*',
-                default => '🔵 *Medium*',
-            };
-
+            $priority = ucfirst($task->priority ?: 'Medium');
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
-
-            $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
-            $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
-
             $boardUrl = self::getBoardUrl($board);
 
-            $msg = "📋 *[HeiSeenBug Guchao]* *New Task Created*\n\n"
-                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
-                 . "📁 *Board:* {$board->title}\n"
-                 . "🏷 *Status:* {$columnTitle}\n"
-                 . "⚡ *Priority:* {$priorityEmoji}\n"
-                 . "👥 *Assignees:* {$assigneeStr}\n"
-                 . ($dueDateStr !== 'None' ? "📅 *Due Date:* {$dueDateStr}\n" : '')
-                 . ($labelsStr !== '' ? "🏷️ *Labels:* {$labelsStr}\n" : '')
-                 . (! empty($task->description) ? "📄 *Description:* _" . mb_strimwidth($task->description, 0, 120, '...') . "_\n" : '')
-                 . "✍️ *Created by:* {$actorName}\n\n"
-                 . "🔗 *View Task:* {$boardUrl}";
+            $divider = "━━━━━━━━━━━━━━━━━━";
+            $msg = "*HEISEENBUG GUCHAO*\n"
+                 . "*New Task Created*\n"
+                 . "*{$task->task_key} | {$task->title}*\n"
+                 . "{$divider}\n"
+                 . "Project: {$board->title}\n"
+                 . "Status: {$columnTitle}\n"
+                 . "Priority: {$priority}\n"
+                 . "Assignee\n"
+                 . "{$assigneeStr}\n"
+                 . "Created By\n"
+                 . "{$actorName}\n";
+
+            if (! empty($task->due_date)) {
+                $dueDate = date('M d, Y', strtotime($task->due_date));
+                $msg .= "Due Date: {$dueDate}\n";
+            }
+            if (! empty($task->labels) && count($task->labels) > 0) {
+                $msg .= "Labels: " . implode(', ', $task->labels) . "\n";
+            }
+            if (! empty($task->description)) {
+                $cleanDesc = trim(mb_strimwidth($task->description, 0, 200, '...'));
+                $msg .= "Description\n{$cleanDesc}\n";
+            }
+
+            $msg .= "{$divider}\n"
+                  . "Open Task:\n"
+                  . "{$boardUrl}\n"
+                  . "_Automated notification · HeiSeenBug Guchao_";
 
             return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
@@ -164,31 +172,39 @@ class WhatsAppService
                 // Column fallback
             }
 
-            $priorityEmoji = match ($task->priority) {
-                'urgent' => '🔴 *Urgent*',
-                'high' => '🟠 *High*',
-                'low' => '🟢 *Low*',
-                default => '🔵 *Medium*',
-            };
-
+            $priority = ucfirst($task->priority ?: 'Medium');
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
-
-            $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
-            $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
-
             $boardUrl = self::getBoardUrl($board);
 
-            $msg = "📝 *[HeiSeenBug Guchao]* *Task Details Updated*\n\n"
-                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
-                 . "📁 *Board:* {$board->title}\n"
-                 . "🏷 *Status:* {$columnTitle}\n"
-                 . "⚡ *Priority:* {$priorityEmoji}\n"
-                 . "👥 *Assignees:* {$assigneeStr}\n"
-                 . ($dueDateStr !== 'None' ? "📅 *Due Date:* {$dueDateStr}\n" : '')
-                 . ($labelsStr !== '' ? "🏷️ *Labels:* {$labelsStr}\n" : '')
-                 . (! empty($task->description) ? "📄 *Description:* _" . mb_strimwidth($task->description, 0, 120, '...') . "_\n" : '')
-                 . "✍️ *Updated by:* {$actorName}\n\n"
-                 . "🔗 *View Task:* {$boardUrl}";
+            $divider = "━━━━━━━━━━━━━━━━━━";
+            $msg = "*HEISEENBUG GUCHAO*\n"
+                 . "*Task Details Updated*\n"
+                 . "*{$task->task_key} | {$task->title}*\n"
+                 . "{$divider}\n"
+                 . "Project: {$board->title}\n"
+                 . "Status: {$columnTitle}\n"
+                 . "Priority: {$priority}\n"
+                 . "Assignee\n"
+                 . "{$assigneeStr}\n"
+                 . "Updated By\n"
+                 . "{$actorName}\n";
+
+            if (! empty($task->due_date)) {
+                $dueDate = date('M d, Y', strtotime($task->due_date));
+                $msg .= "Due Date: {$dueDate}\n";
+            }
+            if (! empty($task->labels) && count($task->labels) > 0) {
+                $msg .= "Labels: " . implode(', ', $task->labels) . "\n";
+            }
+            if (! empty($task->description)) {
+                $cleanDesc = trim(mb_strimwidth($task->description, 0, 200, '...'));
+                $msg .= "Description\n{$cleanDesc}\n";
+            }
+
+            $msg .= "{$divider}\n"
+                  . "Open Task:\n"
+                  . "{$boardUrl}\n"
+                  . "_Automated notification · HeiSeenBug Guchao_";
 
             return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
@@ -210,15 +226,23 @@ class WhatsAppService
 
             $actorName = $actor ? $actor->name : 'Team Member';
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
-
             $boardUrl = self::getBoardUrl($board);
 
-            $msg = "🔄 *[HeiSeenBug Guchao]* *Task Status Updated*\n\n"
-                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
-                 . "📌 *Movement:* `{$oldColumn->title}` ➔ *`{$newColumn->title}`* ⏳\n"
-                 . "👤 *Updated by:* {$actorName}\n"
-                 . "👥 *Assignees:* {$assigneeStr}\n\n"
-                 . "🔗 *Board:* {$boardUrl}";
+            $divider = "━━━━━━━━━━━━━━━━━━";
+            $msg = "*HEISEENBUG GUCHAO*\n"
+                 . "*Task Status Updated*\n"
+                 . "*{$task->task_key} | {$task->title}*\n"
+                 . "{$divider}\n"
+                 . "Project: {$board->title}\n"
+                 . "Status: {$oldColumn->title} -> {$newColumn->title}\n"
+                 . "Assignee\n"
+                 . "{$assigneeStr}\n"
+                 . "Updated By\n"
+                 . "{$actorName}\n"
+                 . "{$divider}\n"
+                 . "Open Task:\n"
+                 . "{$boardUrl}\n"
+                 . "_Automated notification · HeiSeenBug Guchao_";
 
             return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
@@ -235,15 +259,23 @@ class WhatsAppService
         try {
             $actorName = $actor ? $actor->name : 'Team Member';
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
-
             $boardUrl = self::getBoardUrl($board);
 
-            $msg = "🎉 *[HeiSeenBug Guchao]* *Task Completed!* ✅\n\n"
-                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
-                 . "🏆 *Status:* *`Done`*\n"
-                 . "👤 *Completed by:* {$actorName}\n"
-                 . "👥 *Contributors:* {$assigneeStr}\n\n"
-                 . "🔗 *Board:* {$boardUrl}";
+            $divider = "━━━━━━━━━━━━━━━━━━";
+            $msg = "*HEISEENBUG GUCHAO*\n"
+                 . "*Task Completed*\n"
+                 . "*{$task->task_key} | {$task->title}*\n"
+                 . "{$divider}\n"
+                 . "Project: {$board->title}\n"
+                 . "Status: Done\n"
+                 . "Assignee\n"
+                 . "{$assigneeStr}\n"
+                 . "Completed By\n"
+                 . "{$actorName}\n"
+                 . "{$divider}\n"
+                 . "Open Task:\n"
+                 . "{$boardUrl}\n"
+                 . "_Automated notification · HeiSeenBug Guchao_";
 
             return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
@@ -260,16 +292,25 @@ class WhatsAppService
         try {
             $actorName = $actor ? $actor->name : 'Team Member';
             $boardUrl = self::getBoardUrl($board);
-
-            $cleanComment = mb_strimwidth($comment, 0, 150, '...');
-
+            $cleanComment = trim(mb_strimwidth($comment, 0, 200, '...'));
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
-            $msg = "💬 *[HeiSeenBug Guchao]* *New Comment*\n\n"
-                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
-                 . "👤 *{$actorName}:*\n"
-                 . "_{$cleanComment}_\n\n"
-                 . "🔗 *Reply on Guchao:* {$boardUrl}";
+            $divider = "━━━━━━━━━━━━━━━━━━";
+            $msg = "*HEISEENBUG GUCHAO*\n"
+                 . "*New Comment Added*\n"
+                 . "*{$task->task_key} | {$task->title}*\n"
+                 . "{$divider}\n"
+                 . "Project: {$board->title}\n"
+                 . "Comment By\n"
+                 . "{$actorName}\n"
+                 . "Comment\n"
+                 . "{$cleanComment}\n"
+                 . "Assignee\n"
+                 . "{$assigneeStr}\n"
+                 . "{$divider}\n"
+                 . "Open Task:\n"
+                 . "{$boardUrl}\n"
+                 . "_Automated notification · HeiSeenBug Guchao_";
 
             return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {

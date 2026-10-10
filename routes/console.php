@@ -9,7 +9,17 @@ Artisan::command('inspire', function () {
 
 Artisan::command('whatsapp:test {groupId?}', function (?string $groupId = null) {
     $this->info('Sending test notification to WhatsApp bot...');
-    $msg = "🤖 *[HeiSeenBug Guchao]* WhatsApp Bot is active!\n\nThis is a test notification from Guchao Kanban board. Connected successfully! ✅";
+    $divider = "━━━━━━━━━━━━━━━━━━";
+    $msg = "*HEISEENBUG GUCHAO*\n"
+         . "*System Notification*\n"
+         . "*BOT-1 | Bot Connectivity Check*\n"
+         . "{$divider}\n"
+         . "Status: Active\n"
+         . "Priority: High\n"
+         . "{$divider}\n"
+         . "Open Task:\n"
+         . "https://guchao.heiseenbug.com\n"
+         . "_Automated notification · HeiSeenBug Guchao_";
     $success = \App\Services\WhatsAppService::sendMessage($msg, $groupId);
     if ($success) {
         $this->info('✅ Test message sent successfully!');
