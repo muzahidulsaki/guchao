@@ -75,7 +75,7 @@ class WhatsAppService
                     }
                     if (strlen($digits) >= 10) {
                         $mentions[] = $digits . '@s.whatsapp.net';
-                        $assigneeLabels[] = "@{$digits}";
+                        $assigneeLabels[] = "@{$digits} ({$user->name})";
                         continue;
                     }
                 }
