@@ -13,6 +13,7 @@ echo "<ul>";
 echo "<li><strong>Bot Directory:</strong> " . (is_dir($botDir) ? "<span style='color:green;'>Found ($botDir)</span>" : "<span style='color:red;'>Not Found!</span>") . "</li>";
 echo "<li><strong>node_modules:</strong> " . (is_dir($nodeModulesDir) ? "<span style='color:green;'>Installed</span>" : "<span style='color:red;'>MISSING! (You need to run NPM install)</span>") . "</li>";
 echo "<li><strong>server.js:</strong> " . (file_exists($botDir . '/server.js') ? "<span style='color:green;'>Exists</span>" : "<span style='color:red;'>Missing</span>") . "</li>";
+echo "<li><strong>loader.cjs:</strong> " . (file_exists($botDir . '/loader.cjs') ? "<span style='color:green;'>Exists (Use this as Startup File!)</span>" : "<span style='color:red;'>Missing</span>") . "</li>";
 echo "</ul>";
 
 if (file_exists($botErrorLog)) {
