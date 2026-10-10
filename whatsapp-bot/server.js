@@ -307,8 +307,28 @@ app.use('/', router);
 app.use('/wa-bot', router);
 app.use('/bot', router);
 
-app.listen(PORT, () => {
-  console.log(`🌐 HTTP API Server running at http://localhost:${PORT}`);
-  console.log(`🔗 Web QR Scanner: http://localhost:${PORT}/qr`);
-  console.log(`👥 Group List: http://localhost:${PORT}/groups\n`);
+// Error logging
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  try {
+    fs.appendFileSync(path.join(__dirname, 'bot-error.log'), new Date().toISOString() + ': ' + err.stack + '\n');
+  } catch (e) {}
 });
+
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+  try {
+    fs.appendFileSync(path.join(__dirname, 'bot-error.log'), new Date().toISOString() + ': ' + (err?.stack || err) + '\n');
+  } catch (e) {}
+});
+
+if (typeof PhusionPassenger !== 'undefined') {
+  PhusionPassenger.configure({ autoInstall: false });
+  app.listen('passenger');
+} else {
+  app.listen(PORT, () => {
+    console.log(`🌐 HTTP API Server running at http://localhost:${PORT}`);
+    console.log(`🔗 Web QR Scanner: http://localhost:${PORT}/qr`);
+    console.log(`👥 Group List: http://localhost:${PORT}/groups\n`);
+  });
+}
