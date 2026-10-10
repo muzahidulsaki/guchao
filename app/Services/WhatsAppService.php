@@ -122,7 +122,6 @@ class WhatsAppService
                  . "*New Task Created*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
                  . "{$divider}\n"
-                 . "Project: {$board->title}\n"
                  . "Status: {$columnTitle}\n"
                  . "Priority: {$priority}\n"
                  . "Assignee: {$assigneeStr}\n";
@@ -174,18 +173,15 @@ class WhatsAppService
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
             $boardUrl = self::getBoardUrl($board);
 
-            $divider = "━━━━━━━━━━━━━━━━━━";
+            $divider = "━━━━━━━━━━━━━━";
             $msg = "*HEISEENBUG GUCHAO*\n"
                  . "*Task Details Updated*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
                  . "{$divider}\n"
-                 . "Project: {$board->title}\n"
                  . "Status: {$columnTitle}\n"
                  . "Priority: {$priority}\n"
-                 . "Assignee\n"
-                 . "{$assigneeStr}\n"
-                 . "Updated By\n"
-                 . "{$actorName}\n";
+                 . "Assignee: {$assigneeStr}\n"
+                 . "Updated By: {$actorName}\n";
 
             if (! empty($task->due_date)) {
                 $dueDate = date('M d, Y', strtotime($task->due_date));
@@ -226,17 +222,14 @@ class WhatsAppService
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
             $boardUrl = self::getBoardUrl($board);
 
-            $divider = "━━━━━━━━━━━━━━━━━━";
+            $divider = "━━━━━━━━━━━━━━";
             $msg = "*HEISEENBUG GUCHAO*\n"
                  . "*Task Status Updated*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
                  . "{$divider}\n"
-                 . "Project: {$board->title}\n"
                  . "Status: {$oldColumn->title} -> {$newColumn->title}\n"
-                 . "Assignee\n"
-                 . "{$assigneeStr}\n"
-                 . "Updated By\n"
-                 . "{$actorName}\n"
+                 . "Assignee: {$assigneeStr}\n"
+                 . "Updated By: {$actorName}\n"
                  . "{$divider}\n"
                  . "Open Task:\n"
                  . "{$boardUrl}\n"
@@ -259,17 +252,14 @@ class WhatsAppService
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
             $boardUrl = self::getBoardUrl($board);
 
-            $divider = "━━━━━━━━━━━━━━━━━━";
+            $divider = "━━━━━━━━━━━━━━";
             $msg = "*HEISEENBUG GUCHAO*\n"
                  . "*Task Completed*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
                  . "{$divider}\n"
-                 . "Project: {$board->title}\n"
                  . "Status: Done\n"
-                 . "Assignee\n"
-                 . "{$assigneeStr}\n"
-                 . "Completed By\n"
-                 . "{$actorName}\n"
+                 . "Assignee: {$assigneeStr}\n"
+                 . "Completed By: {$actorName}\n"
                  . "{$divider}\n"
                  . "Open Task:\n"
                  . "{$boardUrl}\n"
@@ -293,18 +283,15 @@ class WhatsAppService
             $cleanComment = trim(mb_strimwidth($comment, 0, 200, '...'));
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
-            $divider = "━━━━━━━━━━━━━━━━━━";
+            $divider = "━━━━━━━━━━━━━━";
             $msg = "*HEISEENBUG GUCHAO*\n"
                  . "*New Comment Added*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
                  . "{$divider}\n"
-                 . "Project: {$board->title}\n"
-                 . "Comment By\n"
-                 . "{$actorName}\n"
+                 . "Comment By: {$actorName}\n"
                  . "Comment\n"
                  . "{$cleanComment}\n"
-                 . "Assignee\n"
-                 . "{$assigneeStr}\n"
+                 . "Assignee: {$assigneeStr}\n"
                  . "{$divider}\n"
                  . "Open Task:\n"
                  . "{$boardUrl}\n"
