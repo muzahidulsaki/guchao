@@ -39,7 +39,8 @@ class WhatsAppService
                 $payload['mentions'] = $mentions;
             }
 
-            $response = Http::timeout(4)->post("{$botUrl}/send-message", $payload);
+            // Increased timeout with auto-retry to handle cPanel Node.js / Passenger idle wake-up (cold boot)
+            $response = Http::timeout(12)->retry(2, 500)->post("{$botUrl}/send-message", $payload);
 
             if ($response->successful()) {
                 Log::info("WhatsApp notification sent successfully to group: {$targetGroup} (mentions: " . count($mentions) . ")");
@@ -116,7 +117,7 @@ class WhatsAppService
             [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
             $boardUrl = self::getBoardUrl($board);
 
-            $divider = "━━━━━━━━━━━━━━━━━━";
+            $divider = "━━━━━━━━━━━━━━";
             $msg = "*HEISEENBUG GUCHAO*\n"
                  . "*New Task Created*\n"
                  . "*{$task->task_key} | {$task->title}*\n"
@@ -124,10 +125,8 @@ class WhatsAppService
                  . "Project: {$board->title}\n"
                  . "Status: {$columnTitle}\n"
                  . "Priority: {$priority}\n"
-                 . "Assignee\n"
-                 . "{$assigneeStr}\n"
-                 . "Created By\n"
-                 . "{$actorName}\n";
+                 . "Assignee: {$assigneeStr}\n"
+                 . "Created By: {$actorName}\n";
 
             if (! empty($task->due_date)) {
                 $dueDate = date('M d, Y', strtotime($task->due_date));
