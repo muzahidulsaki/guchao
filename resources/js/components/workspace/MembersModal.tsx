@@ -185,30 +185,27 @@ export function MembersModal({
             </form>
           </div>
 
-          {/* My WhatsApp Number for @mentions */}
-          <div className="rounded-xl border border-emerald-950/60 bg-emerald-950/20 p-4">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1 flex items-center justify-between">
+          {/* My WhatsApp Number */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <MessageCircleIcon className="h-3.5 w-3.5" />
-                My WhatsApp Number (@mention)
+                My WhatsApp Number
               </span>
-              <span className="text-[10px] text-slate-400 font-normal">For task assignment alerts</span>
+              <span className="text-[10px] text-slate-500 font-normal">For task @mentions</span>
             </label>
-            <p className="text-[11px] text-slate-400 mb-2.5">
-              Enter your WhatsApp number (e.g. <span className="font-mono text-slate-300">017XXXXXXXX</span> or <span className="font-mono text-slate-300">88017XXXXXXXX</span>). When tasks are assigned to you, you will be tagged with <span className="text-emerald-400 font-mono">@mention</span> in the WhatsApp group.
-            </p>
             <form onSubmit={handlePhoneSubmit} className="flex gap-2">
               <input
                 type="text"
                 value={myPhone}
                 onChange={(e) => setMyPhone(e.target.value)}
-                placeholder="017XXXXXXXX or 8801XXXXXXXX"
-                className="flex-1 rounded-xl border border-slate-700/80 bg-slate-900 px-3.5 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="e.g. 01712345678"
+                className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-mono text-slate-100 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
               <button
                 type="submit"
                 disabled={isSavingPhone}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors shrink-0"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors shrink-0"
               >
                 {phoneSaved ? (
                   <>
@@ -218,7 +215,7 @@ export function MembersModal({
                 ) : (
                   <>
                     <PhoneIcon className="h-3.5 w-3.5" />
-                    <span>{isSavingPhone ? 'Saving...' : 'Save Number'}</span>
+                    <span>{isSavingPhone ? 'Saving...' : 'Save'}</span>
                   </>
                 )}
               </button>
