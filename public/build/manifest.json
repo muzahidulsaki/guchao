@@ -1,38 +1,38 @@
 {
-  "_BugMark-CslDJGzk.js": {
-    "file": "assets/BugMark-CslDJGzk.js",
+  "_BugMark-NL7jbGOV.js": {
+    "file": "assets/BugMark-NL7jbGOV.js",
     "name": "BugMark",
     "imports": [
       "resources/js/app.tsx"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CpQog7t7.css",
+    "file": "assets/app-B-cnrWPp.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/Pages/Board.tsx": {
-    "file": "assets/Board-DzxgupVy.js",
+    "file": "assets/Board-BMfB1_rH.js",
     "name": "Board",
     "src": "resources/js/Pages/Board.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_BugMark-CslDJGzk.js"
+      "_BugMark-NL7jbGOV.js"
     ]
   },
   "resources/js/Pages/Login.tsx": {
-    "file": "assets/Login-Bgj8IYv0.js",
+    "file": "assets/Login-CfDkQxYF.js",
     "name": "Login",
     "src": "resources/js/Pages/Login.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_BugMark-CslDJGzk.js"
+      "_BugMark-NL7jbGOV.js"
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-BvHSITDv.js",
+    "file": "assets/app-tKRn50vN.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -41,7 +41,7 @@
       "resources/js/Pages/Login.tsx"
     ],
     "css": [
-      "assets/app-CpQog7t7.css"
+      "assets/app-B-cnrWPp.css"
     ]
   }
 }

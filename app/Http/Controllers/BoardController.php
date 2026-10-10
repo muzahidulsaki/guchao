@@ -107,7 +107,7 @@ class BoardController extends Controller
 
         $allWorkspaces = $user->workspaces()->with('boards')->get();
         $workspaceMembers = $workspace
-            ? $workspace->members()->select('users.id', 'users.name', 'users.email', 'users.avatar')->get()
+            ? $workspace->members()->select('users.id', 'users.name', 'users.email', 'users.phone', 'users.avatar')->get()
             : [];
 
         $allBoards = $workspace
@@ -124,8 +124,8 @@ class BoardController extends Controller
             'columns.tasks.activities' => function ($q) {
                 $q->latest();
             },
-            'columns.tasks.assignees:users.id,users.name,users.email,users.avatar',
-            'columns.tasks.assignee:users.id,users.name,users.email,users.avatar',
+            'columns.tasks.assignees:users.id,users.name,users.email,users.phone,users.avatar',
+            'columns.tasks.assignee:users.id,users.name,users.email,users.phone,users.avatar',
         ]);
 
         return Inertia::render('Board', [

@@ -128,4 +128,21 @@ class WorkspaceController extends Controller
 
         return back()->with('success', "Removed {$user->name} from workspace.");
     }
+
+    /**
+     * Update authenticated user's WhatsApp phone number.
+     */
+    public function updatePhone(Request $request)
+    {
+        $validated = $request->validate([
+            'phone' => 'nullable|string|max:25',
+        ]);
+
+        $user = Auth::user();
+        if ($user) {
+            $user->update(['phone' => $validated['phone']]);
+        }
+
+        return back()->with('success', 'WhatsApp number updated successfully!');
+    }
 }

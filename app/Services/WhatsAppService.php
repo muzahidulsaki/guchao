@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppService
 {
     /**
-     * Send a raw formatted text message to WhatsApp group.
+     * Send a formatted text message to WhatsApp group with optional @mentions.
      */
-    public static function sendMessage(string $message, ?string $groupId = null): bool
+    public static function sendMessage(string $message, ?string $groupId = null, array $mentions = []): bool
     {
         if (! config('services.whatsapp.enabled', true)) {
             Log::info('WhatsApp notification skipped: WHATSAPP_BOT_ENABLED is false.');
@@ -30,13 +30,19 @@ class WhatsAppService
         }
 
         try {
-            $response = Http::timeout(4)->post("{$botUrl}/send-message", [
+            $payload = [
                 'message' => $message,
                 'groupId' => $targetGroup,
-            ]);
+            ];
+
+            if (! empty($mentions)) {
+                $payload['mentions'] = $mentions;
+            }
+
+            $response = Http::timeout(4)->post("{$botUrl}/send-message", $payload);
 
             if ($response->successful()) {
-                Log::info("WhatsApp notification sent successfully to group: {$targetGroup}");
+                Log::info("WhatsApp notification sent successfully to group: {$targetGroup} (mentions: " . count($mentions) . ")");
                 return true;
             }
 
@@ -49,7 +55,46 @@ class WhatsAppService
     }
 
     /**
-     * Notify when a new task is created.
+     * Format assignees string and collect @mentions phone JIDs.
+     *
+     * @return array [string $assigneeStr, array $mentions]
+     */
+    private static function formatAssigneesAndMentions(Task $task): array
+    {
+        $mentions = [];
+        $assigneeLabels = [];
+
+        try {
+            $assignees = $task->assignees()->get();
+            foreach ($assignees as $user) {
+                if (! empty($user->phone)) {
+                    $digits = preg_replace('/[^0-9]/', '', $user->phone);
+                    if (str_starts_with($digits, '01')) {
+                        $digits = '88' . $digits;
+                    }
+                    if (strlen($digits) >= 10) {
+                        $mentions[] = $digits . '@s.whatsapp.net';
+                        $assigneeLabels[] = "@{$digits}";
+                        continue;
+                    }
+                }
+                $assigneeLabels[] = $user->name;
+            }
+        } catch (\Throwable $e) {
+            // fallback
+        }
+
+        if (empty($assigneeLabels) && ! empty($task->assignee_name)) {
+            $assigneeLabels = [$task->assignee_name];
+        }
+
+        $assigneeStr = ! empty($assigneeLabels) ? implode(', ', $assigneeLabels) : 'Unassigned';
+
+        return [$assigneeStr, $mentions];
+    }
+
+    /**
+     * Notify when a new task is created with detailed information.
      */
     public static function notifyTaskCreated(Task $task, Board $board, ?User $actor = null): bool
     {
@@ -74,17 +119,7 @@ class WhatsAppService
                 default => '🔵 *Medium*',
             };
 
-            $assignees = [];
-            try {
-                $assignees = $task->assignees()->pluck('name')->toArray();
-            } catch (\Throwable $e) {
-                // Assignees table fallback
-            }
-
-            if (empty($assignees) && ! empty($task->assignee_name)) {
-                $assignees = [$task->assignee_name];
-            }
-            $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Unassigned';
+            [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
             $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
             $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
@@ -103,7 +138,7 @@ class WhatsAppService
                  . "✍️ *Created by:* {$actorName}\n\n"
                  . "🔗 *View Task:* {$boardUrl}";
 
-            return self::sendMessage($msg);
+            return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
             Log::error('Error building task created notification: ' . $e->getMessage());
             return false;
@@ -136,17 +171,7 @@ class WhatsAppService
                 default => '🔵 *Medium*',
             };
 
-            $assignees = [];
-            try {
-                $assignees = $task->assignees()->pluck('name')->toArray();
-            } catch (\Throwable $e) {
-                // Assignees table fallback
-            }
-
-            if (empty($assignees) && ! empty($task->assignee_name)) {
-                $assignees = [$task->assignee_name];
-            }
-            $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Unassigned';
+            [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
             $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
             $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
@@ -165,7 +190,7 @@ class WhatsAppService
                  . "✍️ *Updated by:* {$actorName}\n\n"
                  . "🔗 *View Task:* {$boardUrl}";
 
-            return self::sendMessage($msg);
+            return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
             Log::error('Error building task updated notification: ' . $e->getMessage());
             return false;
@@ -184,17 +209,7 @@ class WhatsAppService
             }
 
             $actorName = $actor ? $actor->name : 'Team Member';
-            $assignees = [];
-            try {
-                $assignees = $task->assignees()->pluck('name')->toArray();
-            } catch (\Throwable $e) {
-                // Assignees table fallback
-            }
-
-            if (empty($assignees) && ! empty($task->assignee_name)) {
-                $assignees = [$task->assignee_name];
-            }
-            $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'None';
+            [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
             $boardUrl = self::getBoardUrl($board);
 
@@ -205,7 +220,7 @@ class WhatsAppService
                  . "👥 *Assignees:* {$assigneeStr}\n\n"
                  . "🔗 *Board:* {$boardUrl}";
 
-            return self::sendMessage($msg);
+            return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
             Log::error('Error building task moved notification: ' . $e->getMessage());
             return false;
@@ -219,17 +234,7 @@ class WhatsAppService
     {
         try {
             $actorName = $actor ? $actor->name : 'Team Member';
-            $assignees = [];
-            try {
-                $assignees = $task->assignees()->pluck('name')->toArray();
-            } catch (\Throwable $e) {
-                // Assignees table fallback
-            }
-
-            if (empty($assignees) && ! empty($task->assignee_name)) {
-                $assignees = [$task->assignee_name];
-            }
-            $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Team';
+            [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
 
             $boardUrl = self::getBoardUrl($board);
 
@@ -240,7 +245,7 @@ class WhatsAppService
                  . "👥 *Contributors:* {$assigneeStr}\n\n"
                  . "🔗 *Board:* {$boardUrl}";
 
-            return self::sendMessage($msg);
+            return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
             Log::error('Error building task completed notification: ' . $e->getMessage());
             return false;
@@ -258,13 +263,15 @@ class WhatsAppService
 
             $cleanComment = mb_strimwidth($comment, 0, 150, '...');
 
+            [$assigneeStr, $mentions] = self::formatAssigneesAndMentions($task);
+
             $msg = "💬 *[HeiSeenBug Guchao]* *New Comment*\n\n"
                  . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
                  . "👤 *{$actorName}:*\n"
                  . "_{$cleanComment}_\n\n"
                  . "🔗 *Reply on Guchao:* {$boardUrl}";
 
-            return self::sendMessage($msg);
+            return self::sendMessage($msg, null, $mentions);
         } catch (\Throwable $e) {
             Log::error('Error building comment added notification: ' . $e->getMessage());
             return false;

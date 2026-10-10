@@ -35,6 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('/workspaces/{workspace}/invite', [WorkspaceController::class, 'invite'])->name('workspaces.invite');
     Route::delete('/workspaces/{workspace}/members/{user}', [WorkspaceController::class, 'removeMember'])->name('workspaces.members.destroy');
+
+    // Profile WhatsApp phone update
+    Route::post('/profile/phone', [WorkspaceController::class, 'updatePhone'])->name('profile.phone');
 });
 
 // Web-based DB setup runner (for running new migrations on cPanel without terminal)

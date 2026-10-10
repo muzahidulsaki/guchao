@@ -247,7 +247,7 @@ router.get('/groups', async (req, res) => {
 
 // Send message to WhatsApp
 router.post('/send-message', async (req, res) => {
-  const { message, groupId } = req.body;
+  const { message, groupId, mentions } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Field "message" is required' });
@@ -268,8 +268,15 @@ router.post('/send-message', async (req, res) => {
   }
 
   try {
-    const result = await sock.sendMessage(targetJid, { text: message });
-    console.log(`📨 Sent message to ${targetJid}: "${message.slice(0, 40)}..."`);
+    const sendOptions = { text: message };
+    if (Array.isArray(mentions) && mentions.length > 0) {
+      sendOptions.mentions = mentions.map((m) =>
+        m.includes('@') ? m : `${m}@s.whatsapp.net`
+      );
+    }
+
+    const result = await sock.sendMessage(targetJid, sendOptions);
+    console.log(`📨 Sent message to ${targetJid}: "${message.slice(0, 40)}..." (mentions: ${sendOptions.mentions?.length || 0})`);
     return res.json({
       success: true,
       messageId: result.key.id,
