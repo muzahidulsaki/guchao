@@ -115,9 +115,10 @@ async function connectToWhatsApp() {
 connectToWhatsApp();
 
 // ----------------- HTTP API Endpoints -----------------
+const router = express.Router();
 
 // Status endpoint
-app.get('/status', (req, res) => {
+router.get('/status', (req, res) => {
   res.json({
     connected: isConnected,
     user: userProfile,
@@ -128,7 +129,7 @@ app.get('/status', (req, res) => {
 });
 
 // QR Code HTML page
-app.get('/qr', async (req, res) => {
+router.get('/qr', async (req, res) => {
   if (isConnected) {
     return res.send(`
       <!DOCTYPE html>
@@ -149,7 +150,7 @@ app.get('/qr', async (req, res) => {
           <span class="badge">Connected</span>
           <h2>WhatsApp is Linked! 🎉</h2>
           <p>Bot is actively running and ready to send notifications from HeiSeenBug Guchao.</p>
-          <p><a href="/groups" style="color: #38bdf8;">View Groups List &rarr;</a></p>
+          <p><a href="./groups" style="color: #38bdf8;">View Groups List &rarr;</a></p>
         </div>
       </body>
       </html>
@@ -225,7 +226,7 @@ app.get('/qr', async (req, res) => {
 });
 
 // List groups
-app.get('/groups', async (req, res) => {
+router.get('/groups', async (req, res) => {
   if (!isConnected) {
     return res.status(503).json({ error: 'WhatsApp is not connected yet.' });
   }
@@ -245,7 +246,7 @@ app.get('/groups', async (req, res) => {
 });
 
 // Send message to WhatsApp
-app.post('/send-message', async (req, res) => {
+router.post('/send-message', async (req, res) => {
   const { message, groupId } = req.body;
 
   if (!message) {
@@ -283,7 +284,7 @@ app.post('/send-message', async (req, res) => {
 });
 
 // Test message endpoint
-app.post('/test', async (req, res) => {
+router.post('/test', async (req, res) => {
   const testMessage = `🤖 *[HeiSeenBug Guchao]* WhatsApp Bot is active!\n\nThis is a test notification from Guchao Kanban board. Connected successfully! ✅`;
   const targetJid = req.body.groupId || DEFAULT_GROUP_ID;
 
@@ -300,6 +301,11 @@ app.post('/test', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+// Mount router on root and cPanel subpaths
+app.use('/', router);
+app.use('/wa-bot', router);
+app.use('/bot', router);
 
 app.listen(PORT, () => {
   console.log(`🌐 HTTP API Server running at http://localhost:${PORT}`);
