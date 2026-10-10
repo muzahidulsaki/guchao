@@ -86,7 +86,7 @@ class WhatsAppService
             }
             $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Unassigned';
 
-            $boardUrl = url("/boards/{$board->id}");
+            $boardUrl = self::getBoardUrl($board);
 
             $msg = "📋 *[HeiSeenBug Guchao]* *New Task Created*\n\n"
                  . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
@@ -128,7 +128,7 @@ class WhatsAppService
             }
             $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'None';
 
-            $boardUrl = url("/boards/{$board->id}");
+            $boardUrl = self::getBoardUrl($board);
 
             $msg = "🔄 *[HeiSeenBug Guchao]* *Task Status Updated*\n\n"
                  . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
@@ -163,7 +163,7 @@ class WhatsAppService
             }
             $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Team';
 
-            $boardUrl = url("/boards/{$board->id}");
+            $boardUrl = self::getBoardUrl($board);
 
             $msg = "🎉 *[HeiSeenBug Guchao]* *Task Completed!* ✅\n\n"
                  . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
@@ -186,7 +186,7 @@ class WhatsAppService
     {
         try {
             $actorName = $actor ? $actor->name : 'Team Member';
-            $boardUrl = url("/boards/{$board->id}");
+            $boardUrl = self::getBoardUrl($board);
 
             $cleanComment = mb_strimwidth($comment, 0, 150, '...');
 
@@ -201,5 +201,18 @@ class WhatsAppService
             Log::error('Error building comment added notification: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Generate canonical board URL for https://guchao.heiseenbug.com.
+     */
+    private static function getBoardUrl(Board $board): string
+    {
+        $appUrl = config('app.url');
+        if (empty($appUrl) || str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1')) {
+            $appUrl = 'https://guchao.heiseenbug.com';
+        }
+        $baseUrl = rtrim($appUrl, '/');
+        return "{$baseUrl}/boards/{$board->id}";
     }
 }
