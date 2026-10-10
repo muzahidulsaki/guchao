@@ -41,4 +41,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'https://guchao.heiseenbug.com/auth/google/callback'),
     ],
 
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_BOT_ENABLED', true),
+        'bot_url' => env('WHATSAPP_BOT_URL', 'http://127.0.0.1:3001'),
+        'group_id' => env('WHATSAPP_GROUP_ID', ''),
+    ],
+
 ];

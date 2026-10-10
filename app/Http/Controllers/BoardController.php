@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\TaskActivity;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -206,6 +207,9 @@ class BoardController extends Controller
             'content' => "Created task {$taskKey}",
         ]);
 
+        // Send WhatsApp notification
+        WhatsAppService::notifyTaskCreated($task, $board, Auth::user());
+
         return back()->with('success', "Task {$taskKey} created successfully!");
     }
 
@@ -292,6 +296,9 @@ class BoardController extends Controller
                 'type' => 'activity',
                 'content' => "Moved from {$oldColumn->title} to {$newColumn->title}",
             ]);
+
+            // Send WhatsApp notification
+            WhatsAppService::notifyTaskMoved($task, $oldColumn, $newColumn, $task->board, Auth::user());
         }
 
         return back();
@@ -366,6 +373,9 @@ class BoardController extends Controller
             'type' => 'comment',
             'content' => $validated['content'],
         ]);
+
+        // Send WhatsApp notification
+        WhatsAppService::notifyCommentAdded($task, $validated['content'], $task->board, Auth::user());
 
         return back()->with('success', 'Comment added.');
     }
