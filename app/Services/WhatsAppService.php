@@ -86,6 +86,9 @@ class WhatsAppService
             }
             $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Unassigned';
 
+            $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
+            $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
+
             $boardUrl = self::getBoardUrl($board);
 
             $msg = "📋 *[HeiSeenBug Guchao]* *New Task Created*\n\n"
@@ -94,12 +97,77 @@ class WhatsAppService
                  . "🏷 *Status:* {$columnTitle}\n"
                  . "⚡ *Priority:* {$priorityEmoji}\n"
                  . "👥 *Assignees:* {$assigneeStr}\n"
+                 . ($dueDateStr !== 'None' ? "📅 *Due Date:* {$dueDateStr}\n" : '')
+                 . ($labelsStr !== '' ? "🏷️ *Labels:* {$labelsStr}\n" : '')
+                 . (! empty($task->description) ? "📄 *Description:* _" . mb_strimwidth($task->description, 0, 120, '...') . "_\n" : '')
                  . "✍️ *Created by:* {$actorName}\n\n"
                  . "🔗 *View Task:* {$boardUrl}";
 
             return self::sendMessage($msg);
         } catch (\Throwable $e) {
             Log::error('Error building task created notification: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Notify when a task is updated with details (assignee, priority, due date, description, labels).
+     */
+    public static function notifyTaskUpdated(Task $task, Board $board, ?User $actor = null): bool
+    {
+        try {
+            $actorName = $actor ? $actor->name : 'Team Member';
+            $columnTitle = 'To Do';
+            try {
+                if ($task->column) {
+                    $columnTitle = $task->column->title;
+                } elseif ($task->column_id) {
+                    $c = Column::find($task->column_id);
+                    if ($c) $columnTitle = $c->title;
+                }
+            } catch (\Throwable $e) {
+                // Column fallback
+            }
+
+            $priorityEmoji = match ($task->priority) {
+                'urgent' => '🔴 *Urgent*',
+                'high' => '🟠 *High*',
+                'low' => '🟢 *Low*',
+                default => '🔵 *Medium*',
+            };
+
+            $assignees = [];
+            try {
+                $assignees = $task->assignees()->pluck('name')->toArray();
+            } catch (\Throwable $e) {
+                // Assignees table fallback
+            }
+
+            if (empty($assignees) && ! empty($task->assignee_name)) {
+                $assignees = [$task->assignee_name];
+            }
+            $assigneeStr = ! empty($assignees) ? implode(', ', $assignees) : 'Unassigned';
+
+            $dueDateStr = $task->due_date ? date('M d, Y', strtotime($task->due_date)) : 'None';
+            $labelsStr = ! empty($task->labels) ? implode(', ', $task->labels) : '';
+
+            $boardUrl = self::getBoardUrl($board);
+
+            $msg = "📝 *[HeiSeenBug Guchao]* *Task Details Updated*\n\n"
+                 . "🔹 *Task:* `{$task->task_key}` — {$task->title}\n"
+                 . "📁 *Board:* {$board->title}\n"
+                 . "🏷 *Status:* {$columnTitle}\n"
+                 . "⚡ *Priority:* {$priorityEmoji}\n"
+                 . "👥 *Assignees:* {$assigneeStr}\n"
+                 . ($dueDateStr !== 'None' ? "📅 *Due Date:* {$dueDateStr}\n" : '')
+                 . ($labelsStr !== '' ? "🏷️ *Labels:* {$labelsStr}\n" : '')
+                 . (! empty($task->description) ? "📄 *Description:* _" . mb_strimwidth($task->description, 0, 120, '...') . "_\n" : '')
+                 . "✍️ *Updated by:* {$actorName}\n\n"
+                 . "🔗 *View Task:* {$boardUrl}";
+
+            return self::sendMessage($msg);
+        } catch (\Throwable $e) {
+            Log::error('Error building task updated notification: ' . $e->getMessage());
             return false;
         }
     }

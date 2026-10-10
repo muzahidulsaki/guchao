@@ -207,8 +207,17 @@ class BoardController extends Controller
             'content' => "Created task {$taskKey}",
         ]);
 
-        // Send WhatsApp notification
-        WhatsAppService::notifyTaskCreated($task, $board, Auth::user());
+        // Only send WhatsApp creation notification if task has detailed information
+        // (If user only typed a bare title in quick-add / Add card, skip notification)
+        $hasDetailedInfo = ! empty($assigneeIds)
+            || ! empty($validated['description'])
+            || ! empty($validated['due_date'])
+            || ! empty($validated['labels'])
+            || (($validated['priority'] ?? 'medium') !== 'medium');
+
+        if ($hasDetailedInfo) {
+            WhatsAppService::notifyTaskCreated($task, $board, Auth::user());
+        }
 
         return back()->with('success', "Task {$taskKey} created successfully!");
     }
@@ -264,6 +273,17 @@ class BoardController extends Controller
             'assignee_name' => $assigneeName,
             'assignee_avatar' => $assigneeAvatar,
         ]);
+
+        $updaterName = Auth::user() ? Auth::user()->name : 'Member';
+        TaskActivity::create([
+            'task_id' => $task->id,
+            'user_name' => $updaterName,
+            'type' => 'activity',
+            'content' => 'Updated task details',
+        ]);
+
+        // Send WhatsApp notification with all updated details
+        WhatsAppService::notifyTaskUpdated($task, $task->board, Auth::user());
 
         return back()->with('success', "Task {$task->task_key} updated.");
     }
