@@ -125,8 +125,7 @@ class WhatsAppService
                  . "Project: {$board->title}\n"
                  . "Status: {$columnTitle}\n"
                  . "Priority: {$priority}\n"
-                 . "Assignee: {$assigneeStr}\n"
-                 . "Created By: {$actorName}\n";
+                 . "Assignee: {$assigneeStr}\n";
 
             if (! empty($task->due_date)) {
                 $dueDate = date('M d, Y', strtotime($task->due_date));
