@@ -135,12 +135,12 @@ class WorkspaceController extends Controller
     public function updatePhone(Request $request)
     {
         $validated = $request->validate([
-            'phone' => 'nullable|string|max:25',
+            'phone' => 'required|string|min:8|max:25',
         ]);
 
         $user = Auth::user();
         if ($user) {
-            $user->update(['phone' => $validated['phone']]);
+            $user->update(['phone' => trim($validated['phone'])]);
         }
 
         return back()->with('success', 'WhatsApp number updated successfully!');

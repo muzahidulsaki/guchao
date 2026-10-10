@@ -8,6 +8,7 @@ import { NewTaskModal } from '../components/kanban/NewTaskModal';
 import { AddColumnModal } from '../components/kanban/AddColumnModal';
 import { WorkspaceModal } from '../components/workspace/WorkspaceModal';
 import { MembersModal } from '../components/workspace/MembersModal';
+import { MandatoryPhoneModal } from '../components/workspace/MandatoryPhoneModal';
 import type { Board, Column, Task, Priority, BoardSummary, Workspace, User } from '../types/kanban';
 
 type BoardPageProps = {
@@ -374,6 +375,9 @@ export default function BoardPage({
         isOpen={isMembersModalOpen}
         onClose={() => setIsMembersModalOpen(false)}
       />
+
+      {/* Mandatory WhatsApp Phone Number Modal */}
+      <MandatoryPhoneModal user={authUser} />
     </div>
   );
 }
